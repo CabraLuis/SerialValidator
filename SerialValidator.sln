@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.10.35013.160
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SerialValidator", "SerialValidator.csproj", "{ECE2EF11-3E53-4933-A310-F84304D37A24}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{ECE2EF11-3E53-4933-A310-F84304D37A24}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ECE2EF11-3E53-4933-A310-F84304D37A24}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ECE2EF11-3E53-4933-A310-F84304D37A24}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ECE2EF11-3E53-4933-A310-F84304D37A24}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {EEA7E014-44F7-433C-8E9E-3FFD5E70A138}
+	EndGlobalSection
+EndGlobal
