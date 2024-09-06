@@ -28,36 +28,43 @@ namespace SerialValidator
         {
             try
             {
-                //string path = "L:\\IT\\SerialValidatorDBPlanner";
-                string path = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+                //Define route and connection to SQLite DB
+                string path = "L:\\IT\\SerialValidatorDBPlanner";
+                //string path = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
                 string conn = $"Data Source = {path}\\database.db; Version = 3;";
                 SQLiteConnection connection = new SQLiteConnection(conn);
                 connection.Open();
 
+                //Commands templates
                 SQLiteCommand insertCommand = new SQLiteCommand(connection);
                 SQLiteCommand selectCommand = new SQLiteCommand(connection);
                 selectCommand.CommandText = "SELECT number FROM Numbers WHERE number = @serial";
                 insertCommand.CommandText = "INSERT INTO Numbers (number) VALUES (@serial)";
 
+                //Aux variables
                 List<string> duplicates = new List<string>();
                 List<string> validated = new List<string>();
                 string currentSerial;
 
+                //Change txtNumbers text to black
                 txtNumbers.SelectAll();
                 txtNumbers.SelectionColor = Color.Black;
                 txtNumbers.DeselectAll();
 
+                //Flag to skip insertion of data
                 bool detectedDuplicate = false;
 
                 for (int i = 0; i < txtNumbers.Lines.Length; i++)
                 {
                     currentSerial = txtNumbers.Lines[i];
                     
+                    //Skip if there's an empty line
                     if (currentSerial == "")
                     {
                         continue;
                     }
 
+                    //Search in DB for duplicates and add them to aux variable
                     selectCommand.Parameters.AddWithValue("serial", currentSerial);
                     SQLiteDataReader reader = selectCommand.ExecuteReader();
 
@@ -69,6 +76,7 @@ namespace SerialValidator
                             serial = reader.GetString(0);
                             duplicates.Add(serial);
 
+                            //Highlight duplicate serials
                             txtNumbers.Select(txtNumbers.GetFirstCharIndexFromLine(i), currentSerial.Length);
                             txtNumbers.SelectionColor = Color.Red;
                             txtNumbers.DeselectAll();
@@ -81,6 +89,7 @@ namespace SerialValidator
                     }
                     reader.Close();
                 }
+                //If there's no more duplicates, insert serials to DB
                 if (!detectedDuplicate)
                 {
                     foreach (string serial in validated){
@@ -91,6 +100,7 @@ namespace SerialValidator
                 detectedDuplicate = false;
                 connection.Close();
 
+                //Generate auxiliary QR
                 Bitmap qrCode = GenerateQR();
                 pbQrCode.Image = qrCode;
 
@@ -132,7 +142,7 @@ namespace SerialValidator
                 {
                     currentSerial = txtNumbers.Lines[i];
 
-                    if (currentSerial == "")
+                    if (currentSerial == "" )
                     {
                         continue;
                     }
@@ -169,7 +179,6 @@ namespace SerialValidator
                 dialog.ShowDialog();
 
                 string filename = dialog.SelectedPath + "\\Seriales.pdf";
-                Console.WriteLine(filename);
                 document.Save(filename);
                 ProcessStartInfo startInfo = new ProcessStartInfo(filename);
                 Process.Start(startInfo);
@@ -215,6 +224,18 @@ namespace SerialValidator
         private void mainForm_Load(object sender, EventArgs e)
         {
             this.Icon = Properties.Resources.logo_ico;
+        }
+
+        private void btnCopy_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                Clipboard.SetText(txtNumbers.Text);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
     }
 }
