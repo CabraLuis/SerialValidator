@@ -28,7 +28,9 @@ namespace SerialValidator
         {
             try
             {
-                string conn = "Data Source = C:\\Users\\itmex\\OneDrive - NIBE\\Escritorio\\database.db;Version = 3;";
+                //string path = "L:\\IT\\SerialValidatorDBPlanner";
+                string path = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+                string conn = $"Data Source = {path}\\database.db; Version = 3;";
                 SQLiteConnection connection = new SQLiteConnection(conn);
                 connection.Open();
 
@@ -38,50 +40,70 @@ namespace SerialValidator
                 insertCommand.CommandText = "INSERT INTO Numbers (number) VALUES (@serial)";
 
                 List<string> duplicates = new List<string>();
+                List<string> validated = new List<string>();
                 string currentSerial;
+
+                txtNumbers.SelectAll();
+                txtNumbers.SelectionColor = Color.Black;
+                txtNumbers.DeselectAll();
+
+                bool detectedDuplicate = false;
 
                 for (int i = 0; i < txtNumbers.Lines.Length; i++)
                 {
                     currentSerial = txtNumbers.Lines[i];
+                    
+                    if (currentSerial == "")
+                    {
+                        continue;
+                    }
+
                     selectCommand.Parameters.AddWithValue("serial", currentSerial);
-                    insertCommand.Parameters.AddWithValue("serial", currentSerial);
                     SQLiteDataReader reader = selectCommand.ExecuteReader();
 
                     if (reader.HasRows)
                     {
+                        string serial;
                         while (reader.Read())
                         {
-                            string serial = reader.GetString(0);
+                            serial = reader.GetString(0);
                             duplicates.Add(serial);
-                            Console.WriteLine(serial);
+
+                            txtNumbers.Select(txtNumbers.GetFirstCharIndexFromLine(i), currentSerial.Length);
+                            txtNumbers.SelectionColor = Color.Red;
+                            txtNumbers.DeselectAll();
                         }
-                        reader.Close();
+                        detectedDuplicate = true;
                     }
                     else
                     {
-                        reader.Close();
+                        validated.Add(currentSerial);
+                    }
+                    reader.Close();
+                }
+                if (!detectedDuplicate)
+                {
+                    foreach (string serial in validated){
+                        insertCommand.Parameters.AddWithValue("serial", serial);
                         insertCommand.ExecuteNonQuery();
                     }
-
-                    if (currentSerial == null)
-                    {
-                        throw new Exception();
-                    }
-
-                    Bitmap generatedBarcode = GenerateBarcode(currentSerial);
-                    XImage barcodeTemp = XImage.FromGdiPlusImage(generatedBarcode);
-
-
                 }
+                detectedDuplicate = false;
                 connection.Close();
-                
-                pbQrCode.Image = GenerateQR();
-                
+
+                Bitmap qrCode = GenerateQR();
+                pbQrCode.Image = qrCode;
+
                 if (duplicates.Count() != 0)
                 {
                     string duplicatesString = string.Join("\n", duplicates);
-                    MessageBox.Show("Seriales Duplicados:\n" + duplicatesString, "Duplicados Encontrados", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show("Seriales Inválidos:\n" + duplicatesString, "Seriales Inválidos Encontrados", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
+                else
+                {
+                    MessageBox.Show("Seriales válidos", "Éxito", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+
             }
             catch (Exception ex)
             {
@@ -96,43 +118,52 @@ namespace SerialValidator
 
                 PdfDocument document = new PdfDocument();
                 PdfPage page = document.AddPage();
-                page.Orientation = PdfSharp.PageOrientation.Landscape;
                 XGraphics gfx = XGraphics.FromPdfPage(page);
                 XFont titleFont = new XFont("Verdana", 18, XFontStyleEx.Bold);
-                XFont serialFont = new XFont("Verdana", 5, XFontStyleEx.Regular);
-                gfx.DrawString("Verificador de Seriales", titleFont, XBrushes.Black, new XRect(0, 0, page.Width, page.Height), XStringFormats.TopCenter);
+                page.Orientation = PdfSharp.PageOrientation.Landscape;
+                int pageNum = 1;
+                gfx.DrawString("Verificador de Seriales", titleFont, XBrushes   .Black, new XRect(0, 0, page.Width.Point, page.Height.Point), XStringFormats.TopCenter);
+                gfx.DrawString(pageNum.ToString(), titleFont, XBrushes.Black, new XRect(0, 0, page.Width.Point, page.Height.Point), XStringFormats.TopRight);
 
-                double xImage = 1;
-                double yImage = 0.7;
+                double xImage = 20;
+                double yImage = 75;
 
                 for (int i = 0; i < txtNumbers.Lines.Length; i++)
                 {
                     currentSerial = txtNumbers.Lines[i];
 
-                    if (currentSerial == null)
+                    if (currentSerial == "")
                     {
-                        throw new Exception();
+                        continue;
                     }
 
                     Bitmap generatedBarcode = GenerateBarcode(currentSerial);
                     XImage barcodeTemp = XImage.FromGdiPlusImage(generatedBarcode);
 
-                    //gfx.DrawString(currentSerial, serialFont, XBrushes.Black, );
-                    gfx.DrawImage(barcodeTemp, xImage * 93.5, yImage * 75);
+                    gfx.DrawImage(barcodeTemp, xImage, yImage);
 
-                    yImage += 1.5;
+                    yImage += 113;
 
-                    Console.WriteLine(barcodeTemp.Size);
-
-                    if (yImage >= 8)
+                    if (XUnit.FromPoint(yImage) + XUnit.FromPoint(barcodeTemp.Size.Height) >= page.Height)
                     {
-                        yImage = 0.7;
-                        xImage += 1.5;
+                        yImage = 75;
+                        xImage += barcodeTemp.Size.Width * 2.4;
                     }
 
+                    if (XUnit.FromPoint(xImage) + XUnit.FromPoint(barcodeTemp.Size.Width) >= page.Width && i + 1 < txtNumbers.Lines.Length)
+                    {
+                        pageNum++;
+                        page = document.AddPage();
+                        page.Orientation = PdfSharp.PageOrientation.Landscape;
+                        gfx = XGraphics.FromPdfPage(page);
+                        gfx.DrawString(pageNum.ToString(), titleFont, XBrushes.Black, new XRect(0, 0, page.Width.Point, page.Height.Point), XStringFormats.TopRight);
+                        xImage = 20;
+                        yImage = 75;
+                    }
                 }
 
-                pbQrCode.Image = GenerateQR();
+                Bitmap qrCode = GenerateQR();
+                pbQrCode.Image = qrCode;
 
                 FolderBrowserDialog dialog = new FolderBrowserDialog();
                 dialog.ShowDialog();
@@ -153,8 +184,9 @@ namespace SerialValidator
         {
             BarcodeWriter barcodeWriter = new BarcodeWriter();
             barcodeWriter.Format = BarcodeFormat.CODE_128;
-            barcodeWriter.Options.PureBarcode = true;
-            barcodeWriter.Options.Margin = 1;
+            barcodeWriter.Options.PureBarcode = false;
+            barcodeWriter.Options.Margin = 0;
+            barcodeWriter.Options.Height = 40;
             Bitmap barcodeBitmap = barcodeWriter.Write(serial);
             return barcodeBitmap;
         }
@@ -162,13 +194,14 @@ namespace SerialValidator
         private Bitmap GenerateQR()
         {
             var barcodeWriter = new BarcodeWriter();
-            
+
             QrCodeEncodingOptions options = new QrCodeEncodingOptions()
             {
                 DisableECI = true,
                 CharacterSet = "UTF-8",
-                Width = 300,
-                Height = 300
+                Width = 200,
+                Height = 200,
+                Margin = 0,
             };
             barcodeWriter.Format = BarcodeFormat.QR_CODE;
             barcodeWriter.Options = options;
@@ -179,6 +212,9 @@ namespace SerialValidator
             return qrCodeBitmap;
         }
 
-       
+        private void mainForm_Load(object sender, EventArgs e)
+        {
+            this.Icon = Properties.Resources.logo_ico;
+        }
     }
 }

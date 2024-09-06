@@ -61,11 +61,21 @@ namespace SerialValidator.Properties {
         }
         
         /// <summary>
+        ///   Busca un recurso adaptado de tipo System.Drawing.Icon similar a (Icono).
+        /// </summary>
+        internal static System.Drawing.Icon logo_ico {
+            get {
+                object obj = ResourceManager.GetObject("logo_ico", resourceCulture);
+                return ((System.Drawing.Icon)(obj));
+            }
+        }
+        
+        /// <summary>
         ///   Busca un recurso adaptado de tipo System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap Thermx_Logo_No_Background {
+        internal static System.Drawing.Bitmap logo_png {
             get {
-                object obj = ResourceManager.GetObject("Thermx_Logo_No_Background", resourceCulture);
+                object obj = ResourceManager.GetObject("logo_png", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }

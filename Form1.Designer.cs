@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(mainForm));
             this.txtNumbers = new System.Windows.Forms.RichTextBox();
             this.btnValidate = new System.Windows.Forms.Button();
             this.pbQrCode = new System.Windows.Forms.PictureBox();
@@ -39,6 +40,8 @@
             // 
             // txtNumbers
             // 
+            this.txtNumbers.DetectUrls = false;
+            this.txtNumbers.HideSelection = false;
             this.txtNumbers.Location = new System.Drawing.Point(12, 12);
             this.txtNumbers.Name = "txtNumbers";
             this.txtNumbers.Size = new System.Drawing.Size(150, 426);
@@ -48,6 +51,7 @@
             // 
             // btnValidate
             // 
+            this.btnValidate.Cursor = System.Windows.Forms.Cursors.Hand;
             this.btnValidate.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btnValidate.Location = new System.Drawing.Point(168, 12);
             this.btnValidate.Name = "btnValidate";
@@ -62,13 +66,13 @@
             this.pbQrCode.Location = new System.Drawing.Point(168, 238);
             this.pbQrCode.Name = "pbQrCode";
             this.pbQrCode.Size = new System.Drawing.Size(200, 200);
-            this.pbQrCode.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
+            this.pbQrCode.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
             this.pbQrCode.TabIndex = 3;
             this.pbQrCode.TabStop = false;
             // 
             // pbLogo
             // 
-            this.pbLogo.Image = global::SerialValidator.Properties.Resources.Thermx_Logo_No_Background;
+            this.pbLogo.Image = global::SerialValidator.Properties.Resources.logo_png;
             this.pbLogo.Location = new System.Drawing.Point(167, 84);
             this.pbLogo.Name = "pbLogo";
             this.pbLogo.Size = new System.Drawing.Size(200, 148);
@@ -78,6 +82,7 @@
             // 
             // btnGenerarPDF
             // 
+            this.btnGenerarPDF.Cursor = System.Windows.Forms.Cursors.Hand;
             this.btnGenerarPDF.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btnGenerarPDF.Location = new System.Drawing.Point(168, 48);
             this.btnGenerarPDF.Name = "btnGenerarPDF";
@@ -97,8 +102,11 @@
             this.Controls.Add(this.pbQrCode);
             this.Controls.Add(this.btnValidate);
             this.Controls.Add(this.txtNumbers);
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "mainForm";
-            this.Text = "Serial Validator";
+            this.StartPosition = System.Windows.Forms.FormStartPosition.Manual;
+            this.Text = "Validador de Seriales (Clean Room)";
+            this.Load += new System.EventHandler(this.mainForm_Load);
             ((System.ComponentModel.ISupportInitialize)(this.pbQrCode)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.pbLogo)).EndInit();
             this.ResumeLayout(false);
