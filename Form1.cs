@@ -14,6 +14,8 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using ZXing;
 using ZXing.QrCode;
+using Microsoft.WindowsAPICodePack;
+using Microsoft.WindowsAPICodePack.Dialogs;
 
 namespace SerialValidator
 {
@@ -28,43 +30,43 @@ namespace SerialValidator
         {
             try
             {
-                //Define route and connection to SQLite DB
-                string path = "L:\\IT\\SerialValidatorDBPlanner";
-                //string path = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+                // Define route and connection to SQLite DB
+                // string path = "L:\\IT\\SerialValidatorDBPlanner";
+                string path = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
                 string conn = $"Data Source = {path}\\database.db; Version = 3;";
                 SQLiteConnection connection = new SQLiteConnection(conn);
                 connection.Open();
 
-                //Commands templates
+                // Commands templates
                 SQLiteCommand insertCommand = new SQLiteCommand(connection);
                 SQLiteCommand selectCommand = new SQLiteCommand(connection);
                 selectCommand.CommandText = "SELECT number FROM Numbers WHERE number = @serial";
                 insertCommand.CommandText = "INSERT INTO Numbers (number) VALUES (@serial)";
 
-                //Aux variables
+                // Aux variables
                 List<string> duplicates = new List<string>();
                 List<string> validated = new List<string>();
                 string currentSerial;
 
-                //Change txtNumbers text to black
+                // Change txtNumbers text to black
                 txtNumbers.SelectAll();
                 txtNumbers.SelectionColor = Color.Black;
                 txtNumbers.DeselectAll();
 
-                //Flag to skip insertion of data
+                // Flag to skip insertion of data
                 bool detectedDuplicate = false;
 
                 for (int i = 0; i < txtNumbers.Lines.Length; i++)
                 {
                     currentSerial = txtNumbers.Lines[i];
                     
-                    //Skip if there's an empty line
+                    // Skip if there's an empty line
                     if (currentSerial == "")
                     {
                         continue;
                     }
 
-                    //Search in DB for duplicates and add them to aux variable
+                    // Search in DB for duplicates and add them to aux variable
                     selectCommand.Parameters.AddWithValue("serial", currentSerial);
                     SQLiteDataReader reader = selectCommand.ExecuteReader();
 
@@ -76,7 +78,7 @@ namespace SerialValidator
                             serial = reader.GetString(0);
                             duplicates.Add(serial);
 
-                            //Highlight duplicate serials
+                            // Highlight duplicate serials
                             txtNumbers.Select(txtNumbers.GetFirstCharIndexFromLine(i), currentSerial.Length);
                             txtNumbers.SelectionColor = Color.Red;
                             txtNumbers.DeselectAll();
@@ -89,10 +91,11 @@ namespace SerialValidator
                     }
                     reader.Close();
                 }
-                //If there's no more duplicates, insert serials to DB
+                // If there's no more duplicates, insert serials to DB
                 if (!detectedDuplicate)
                 {
-                    foreach (string serial in validated){
+                    foreach (string serial in validated)
+                    {
                         insertCommand.Parameters.AddWithValue("serial", serial);
                         insertCommand.ExecuteNonQuery();
                     }
@@ -100,10 +103,11 @@ namespace SerialValidator
                 detectedDuplicate = false;
                 connection.Close();
 
-                //Generate auxiliary QR
+                // Generate auxiliary QR
                 Bitmap qrCode = GenerateQR();
                 pbQrCode.Image = qrCode;
 
+                // Display duplicated values
                 if (duplicates.Count() != 0)
                 {
                     string duplicatesString = string.Join("\n", duplicates);
@@ -126,15 +130,18 @@ namespace SerialValidator
             {
                 string currentSerial;
 
+                // Create new document and options
                 PdfDocument document = new PdfDocument();
                 PdfPage page = document.AddPage();
                 XGraphics gfx = XGraphics.FromPdfPage(page);
                 XFont titleFont = new XFont("Verdana", 18, XFontStyleEx.Bold);
                 page.Orientation = PdfSharp.PageOrientation.Landscape;
+                gfx.DrawString("Verificador de Seriales", titleFont, XBrushes.Black, new XRect(0, 0, page.Width.Point, page.Height.Point), XStringFormats.TopCenter);
+                // Variable to count pages
                 int pageNum = 1;
-                gfx.DrawString("Verificador de Seriales", titleFont, XBrushes   .Black, new XRect(0, 0, page.Width.Point, page.Height.Point), XStringFormats.TopCenter);
                 gfx.DrawString(pageNum.ToString(), titleFont, XBrushes.Black, new XRect(0, 0, page.Width.Point, page.Height.Point), XStringFormats.TopRight);
 
+                // Starting barcode point
                 double xImage = 20;
                 double yImage = 75;
 
@@ -147,19 +154,22 @@ namespace SerialValidator
                         continue;
                     }
 
+                    // Generate new barcode to temp variable and draw
                     Bitmap generatedBarcode = GenerateBarcode(currentSerial);
                     XImage barcodeTemp = XImage.FromGdiPlusImage(generatedBarcode);
-
                     gfx.DrawImage(barcodeTemp, xImage, yImage);
 
+                    // Increase y coord downwards
                     yImage += 113;
 
+                    // If the image's height is larger than the page's height, increase x coord to the right
                     if (XUnit.FromPoint(yImage) + XUnit.FromPoint(barcodeTemp.Size.Height) >= page.Height)
                     {
                         yImage = 75;
                         xImage += barcodeTemp.Size.Width * 2.4;
                     }
 
+                    // If the image's width is larger than the page's width, create a new page
                     if (XUnit.FromPoint(xImage) + XUnit.FromPoint(barcodeTemp.Size.Width) >= page.Width && i + 1 < txtNumbers.Lines.Length)
                     {
                         pageNum++;
@@ -172,13 +182,17 @@ namespace SerialValidator
                     }
                 }
 
+                // Generate aux QR code
                 Bitmap qrCode = GenerateQR();
                 pbQrCode.Image = qrCode;
 
-                FolderBrowserDialog dialog = new FolderBrowserDialog();
-                dialog.ShowDialog();
+                //FolderBrowserDialog dialog = new FolderBrowserDialog();
+                //dialog.ShowDialog();
 
-                string filename = dialog.SelectedPath + "\\Seriales.pdf";
+                CommonOpenFileDialog folderDialog = new CommonOpenFileDialog { RestoreDirectory = true, DefaultFileName = "Seriales.pdf" };
+                folderDialog.ShowDialog();
+
+                string filename = folderDialog.FileName;
                 document.Save(filename);
                 ProcessStartInfo startInfo = new ProcessStartInfo(filename);
                 Process.Start(startInfo);
@@ -215,7 +229,7 @@ namespace SerialValidator
             barcodeWriter.Format = BarcodeFormat.QR_CODE;
             barcodeWriter.Options = options;
 
-            string concatNumbers = string.Join(Environment.NewLine, txtNumbers.Lines);
+            string concatNumbers = string.Join("\r", txtNumbers.Lines);
             var qrCodeBitmap = barcodeWriter.Write(concatNumbers);
 
             return qrCodeBitmap;
