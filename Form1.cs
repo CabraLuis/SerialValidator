@@ -238,6 +238,16 @@ namespace SerialValidator
         private void mainForm_Load(object sender, EventArgs e)
         {
             this.Icon = Properties.Resources.logo_ico;
+
+            string path = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            string conn = $"Data Source = {path}\\database.db; Version = 3;";
+            SQLiteConnection connection = new SQLiteConnection(conn);
+            connection.Open();
+
+            SQLiteCommand createTableCommand = new SQLiteCommand(connection);
+            createTableCommand.CommandText = "CREATE TABLE IF NOT EXISTS Numbers (number TEXT UNIQUE);";
+
+            createTableCommand.ExecuteNonQuery();
         }
 
         private void btnCopy_Click(object sender, EventArgs e)
